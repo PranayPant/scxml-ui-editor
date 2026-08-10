@@ -1,0 +1,453 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Semantic dark-mode tokens (shared by React Flow SVG + Monaco). */
+  --canvas-bg: #09090b;
+  --canvas-grid-dots: #27272a;
+  --xy-edge-stroke-default: #52525b;
+  --xy-edge-stroke-selected: #3b82f6;
+  --xy-node-border-radius: 8px;
+
+  --monaco-bg: #09090b;
+  --monaco-line-highlight: #18181b;
+  --monaco-selection-highlight: #1e3a8a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Shared selection highlight used by both views */
+.selection-highlight {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Toolbar                                                            */
+/* ------------------------------------------------------------------ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+  z-index: 20;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-group button {
+  appearance: none;
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.toolbar-group button:hover {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+/* ------------------------------------------------------------------ */
+/* State nodes                                                        */
+/* ------------------------------------------------------------------ */
+.state-node {
+  border-radius: 8px;
+  min-width: 120px;
+  min-height: 48px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #4b5563;
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+
+/* Type tokens: distinct border styles + background opacity (no text badges). */
+.state-node-atomic {
+  border-color: #334155;
+  border-style: solid;
+  background: rgba(15, 23, 42, 0.92);
+}
+
+/* Compound + parallel containers: transparent-ish fill with a distinct
+   dashed/dotted border so nested sub-state boundaries read as "parent
+   panels" rather than cards. */
+.state-node-container {
+  background: rgba(99, 102, 241, 0.08);
+  border-width: 2px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 4px;
+}
+
+.state-node-compound {
+  border-style: dashed;
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(88, 28, 135, 0.1);
+  min-width: 220px;
+  min-height: 120px;
+}
+
+.state-node-compound .state-node-title {
+  color: #e9d5ff;
+  font-weight: 600;
+}
+
+.state-node-parallel {
+  border-style: dotted;
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(8, 47, 73, 0.1);
+}
+
+.state-node-parallel .state-node-title {
+  color: #a5f3fc;
+  font-weight: 600;
+}
+
+/* Final: compact card with a red double-border + bullseye icon. */
+.state-node-final {
+  border-color: rgba(239, 68, 68, 0.6);
+  border-style: solid;
+  background: rgba(127, 29, 29, 0.2);
+  border-radius: 8px;
+  min-width: 96px;
+  min-height: 32px;
+  padding: 6px 12px;
+}
+
+.state-node-final-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.state-final-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.state-final-icon-core {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f87171;
+}
+
+.state-node-final .state-node-title {
+  color: #fecaca;
+  font-weight: 600;
+  text-align: left;
+}
+
+.state-node-title {
+  text-align: center;
+  line-height: 1.2;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Atomic state body wraps title + action list. */
+.state-node-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+}
+
+/* Title + type badge on one row. */
+.state-node-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.state-node-title-row .state-node-title {
+  text-align: left;
+}
+
+/* Internal action list (onentry / onexit). */
+.state-node-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.state-action {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state-action-entry {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.state-action-exit {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.state-action-kind {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-size: 9px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.state-action-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state-node-children {
+  min-height: 24px;
+  flex: 1;
+}
+
+/* Initial-state indicator (the "●" dot). */
+.initial-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 2px solid #e0f2fe;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+  position: relative;
+}
+
+.state-node-history {
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-color: #f59e0b;
+  background: #78350f;
+}
+
+.history-circle {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.history-letter {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fcd34d;
+}
+
+.history-asterisk {
+  color: #fcd34d;
+  font-size: 12px;
+}
+
+.parallel-bars {
+  margin-right: 6px;
+  color: #6ee7b7;
+}
+
+/* React Flow handles: hidden by default, revealed on node hover so they stop
+   cluttering node boundaries (per enhancement "Handle Dot Visibility"). */
+.react-flow__handle {
+  background: #60a5fa;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.state-node-hover:hover .react-flow__handle,
+.state-node-hover:focus-within .react-flow__handle.transform {
+  opacity: 1;
+}
+
+/* Keep the handle of the parent group visible enough when its descendants are
+   hovered so cross-subflow edges can still attach at the boundary. */
+.react-flow__node:has(> .state-node-hover:hover) .react-flow__handle {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Node palette                                                       */
+/* ------------------------------------------------------------------ */
+.node-palette {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 5;
+  background: rgba(17, 24, 39, 0.92);
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+}
+
+.node-palette-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  padding: 0 4px 4px;
+  border-bottom: 1px solid #374151;
+}
+
+.node-palette-item {
+  padding: 4px 10px;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #e5e7eb;
+  cursor: grab;
+  user-select: none;
+  text-align: center;
+}
+
+.node-palette-item:hover {
+  background: #1f2937;
+  border-color: #60a5fa;
+}
+
+/* ------------------------------------------------------------------ */
+/* Transition edge label                                              */
+/* ------------------------------------------------------------------ */
+.transition-edge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 2px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #e2e8f0;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  user-select: none;
+}
+
+.transition-edge-event {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.transition-edge-cond {
+  color: #fbbf24;
+  font-size: 10px;
+}
+
+/* Give edges a slightly wider arrow so direction is legible at low zoom, and
+   drive their stroke from the shared token so SVG matches the theme. */
+.react-flow__edge-path {
+  stroke: var(--xy-edge-stroke-default);
+  stroke-width: 1.5;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--xy-edge-stroke-selected);
+}
+
+/* ------------------------------------------------------------------ */
+/* Live-preview-paused banner                                         */
+/* ------------------------------------------------------------------ */
+.preview-banner {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 20;
+  background: #b45309;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+}
+
+/* React Flow container must fill its panel; use the shared dark canvas bg so
+   it matches Monaco and the rest of the app shell. */
+.react-flow {
+  height: 100%;
+  width: 100%;
+  background-color: var(--canvas-bg);
+}
+
+/* Forces the toolbar to stay above the canvas content */
+.react-flow__viewport {
+  z-index: 1;
+}

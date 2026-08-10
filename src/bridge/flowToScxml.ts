@@ -1,0 +1,143 @@
+import type { Node } from '@xyflow/react';
+import {
+  addState,
+  addTransition,
+  removeState,
+  removeTransition,
+  renameState,
+  type SCXMLDocument,
+  type StateNodeLike,
+  type Transition,
+} from 'scxml-parser';
+import { collectStateNodes, writeLayout, writeTransitionId } from './metadataRegistry';
+import { transitionEdgeId } from './scxmlToFlow';
+
+/**
+ * Translate React Flow / canvas interactions into `scxml-parser` AST
+ * mutations, keeping the SCXML document as the single source of truth.
+ * All functions mutate the AST in place; callers re-serialize + re-render.
+ */
+
+/** Reconstruct a node's global (canvas) position by summing its relative
+ * position with every ancestor's position up the `parentId` chain. */
+function getGlobalPosition(nodes: Node[], nodeId: string): { x: number; y: number } {
+  const node = nodes.find((n) => n.id === nodeId);
+  if (!node) return { x: 0, y: 0 };
+  if (node.parentId) {
+    const parentPos = getGlobalPosition(nodes, node.parentId);
+    return {
+      x: node.position.x + parentPos.x,
+      y: node.position.y + parentPos.y,
+    };
+  }
+  return { x: node.position.x, y: node.position.y };
+}
+
+/**
+ * Persist the final drag position of a node into its <metadata> coordinates.
+ *
+ * React Flow reports a dragged child's `position` relative to its parent, but
+ * the AST stores **global** coordinates (per the coordinate contract). We
+ * therefore add back the ancestor chain's global offset before writing.
+ */
+export function persistNodePosition(
+  doc: SCXMLDocument,
+  nodes: Node[],
+  nodeId: string,
+  x: number,
+  y: number,
+): void {
+  const target = collectStateNodes(doc).find((n) => n.id === nodeId);
+  if (!target) return;
+
+  // Preserve the node's ancestry when synthesizing its entry, so a nested
+  // child's relative position is correctly converted back to global: without
+  // `parentId`, `getGlobalPosition` would omit the ancestor offset and write
+  // the wrong AST coordinates on drag.
+  const existingNode = nodes.find((n) => n.id === nodeId);
+
+  const global = getGlobalPosition(
+    [
+      ...nodes.filter((n) => n.id !== nodeId),
+      {
+        id: nodeId,
+        position: { x, y },
+        parentId: existingNode?.parentId,
+      } as Node,
+    ],
+    nodeId,
+  );
+
+  const existing = target.metadata.find((m) => m.tag === 'ui:layout');
+  const attrs: Record<string, string> = existing ? { ...existing.attributes } : { x: '0', y: '0' };
+  writeLayout(target, {
+    x: global.x,
+    y: global.y,
+    width: num(attrs.width),
+    height: num(attrs.height),
+  });
+}
+
+/** Draw a new transition from source -> target with an optional event. */
+export function connectStates(
+  doc: SCXMLDocument,
+  sourceId: string,
+  targetId: string,
+  event?: string,
+): Transition | null {
+  try {
+    const t = addTransition(doc, sourceId, targetId, event);
+    // Persist a stable transition id. `addTransition` always assigns the
+    // transition's `id`, so we record it verbatim; the fallback keeps the type
+    // total without depending on parser internals.
+    writeTransitionId(t, t.id ?? transitionEdgeId(sourceId, t.target ?? ''));
+    return t;
+  } catch {
+    return null;
+  }
+}
+
+/** Remove a state and prune dangling references/targets. */
+export function deleteState(doc: SCXMLDocument, stateId: string): void {
+  removeState(doc, stateId);
+}
+
+/** Remove an edge/transition by its stable id. */
+export function deleteEdge(doc: SCXMLDocument, edgeId: string): void {
+  removeTransition(doc, edgeId);
+}
+
+/** Rename a state, cascading across transitions/initial refs. */
+export function renameStateId(doc: SCXMLDocument, oldId: string, newId: string): void {
+  renameState(doc, oldId, newId);
+}
+
+/**
+ * Add a new state node at the root of the document. Supports atomic, compound,
+ * parallel-featured, and final-ish placeholders (all modelled as <state>).
+ * Returns the created node so callers can persist an initial layout.
+ */
+export function addStateNode(
+  doc: SCXMLDocument,
+  id: string,
+  kind: 'atomic' | 'compound' | 'parallel' | 'final',
+): StateNodeLike | null {
+  try {
+    const node = addState(doc, null, { id });
+    if (kind === 'compound' || kind === 'parallel') {
+      // Give container nodes an empty children array to host sub-states.
+      node.states = node.states ?? [];
+      node.parallels = node.parallels ?? [];
+      node.finals = node.finals ?? [];
+    }
+    return node;
+  } catch {
+    return null;
+  }
+}
+
+function num(v: string | undefined): number | undefined {
+  if (v === undefined || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}

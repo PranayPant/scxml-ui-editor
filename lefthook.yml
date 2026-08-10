@@ -1,0 +1,30 @@
+# Lefthook configuration (mirrors the scxml-parser library setup)
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    # Format staged files with Biome and stage the fixes.
+    biome-format:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc}"
+      run: npx biome format --write {staged_files}
+      stage_fixed: true
+    # Lint staged files with Biome and apply safe fixes.
+    biome-lint:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc}"
+      run: npx biome lint --write {staged_files}
+      stage_fixed: true
+
+# Run a full Biome check and TypeScript type-check on every push as a
+# safety net beyond the pre-commit formatting/linting of staged files.
+pre-push:
+  parallel: true
+  commands:
+    # `glob: "**"` ensures these whole-repo checks run on every push,
+    # regardless of which files changed.
+    biome-check:
+      glob: "**"
+      run: npx biome check src
+    typecheck:
+      glob: "**"
+      run: npx tsc --noEmit
