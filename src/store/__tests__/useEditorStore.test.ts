@@ -25,6 +25,8 @@ function resetStore() {
     selectedNodeId: null,
     syncOrigin: 'IDLE',
     isDirty: false,
+    editingLabelId: null,
+    editingLabelKind: null,
   });
 }
 
@@ -124,5 +126,42 @@ describe('useEditorStore sync transaction semantics', () => {
     expect(useEditorStore.getState().isDirty).toBe(true);
     api.markClean();
     expect(useEditorStore.getState().isDirty).toBe(false);
+
+    // editSlice
+    api.setEditingLabel('idle', 'node');
+    expect(useEditorStore.getState().editingLabelId).toBe('idle');
+    expect(useEditorStore.getState().editingLabelKind).toBe('node');
+    api.setEditingLabel(null, null);
+    expect(useEditorStore.getState().editingLabelId).toBeNull();
+  });
+
+  it('commitLabel renames a state node id', () => {
+    useEditorStore.getState().seedStore(MINIMAL_SCXML);
+    useEditorStore.getState().commitLabel('running', 'node', 'executing');
+    const s = useEditorStore.getState();
+    expect(s.ast?.scxml.states.some((n) => n.id === 'executing')).toBe(true);
+    // Editing mode cleared after commit.
+    expect(s.editingLabelId).toBeNull();
+    expect(s.rawXml).toContain('executing');
+  });
+
+  it('commitLabel edits an edge event label', () => {
+    useEditorStore.getState().seedStore(MINIMAL_SCXML);
+    // The idle -> running transition derives the stable id `idle:running`.
+    useEditorStore.getState().commitLabel('idle:running', 'edge', 'begin');
+    const s = useEditorStore.getState();
+    const idle = s.ast!.scxml.states.find((n) => n.id === 'idle')!;
+    expect(idle.transitions[0].event).toBe('begin');
+    expect(s.editingLabelId).toBeNull();
+  });
+
+  it('commitLabel ignores empty node renames', () => {
+    useEditorStore.getState().seedStore(MINIMAL_SCXML);
+    useEditorStore.getState().commitLabel('idle', 'node', '   ');
+    const s = useEditorStore.getState();
+    // An empty rename must not blank or replace the state id.
+    expect(s.ast?.scxml.states.some((n) => n.id === 'idle')).toBe(true);
+    // Editing mode cleared after commit.
+    expect(s.editingLabelId).toBeNull();
   });
 });

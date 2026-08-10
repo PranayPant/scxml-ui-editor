@@ -1,20 +1,22 @@
 import type { NodeProps } from '@xyflow/react';
 import { memo } from 'react';
 import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
+import { EditableNodeTitle } from './EditableNodeTitle';
 import { StateNodeWrapper } from './StateNodeWrapper';
 
 /**
  * Parallel state — renders with a distinct "=" style to signal concurrent
  * regions, while still hosting nested sub-states as React Flow children.
  */
-export const ParallelNode = memo(function ParallelNode({ data }: NodeProps<ScxmlFlowNode>) {
+export const ParallelNode = memo(function ParallelNode({ id, data }: NodeProps<ScxmlFlowNode>) {
   return (
     <StateNodeWrapper className="state-node state-node-parallel state-node-container state-node-hover">
       <div className="state-node-title-row">
-        <span className="state-node-title">
-          <span className="parallel-bars">⫽</span>
-          {data.label}
-        </span>
+        <EditableNodeTitle
+          nodeId={id}
+          label={data.label}
+          prefix={<span className="parallel-bars">⫽</span>}
+        />
       </div>
       <div className="state-node-actions">
         {data.actions?.onentry?.map((a) => (

@@ -199,6 +199,48 @@ body {
   z-index: 1;
 }
 
+/* Rename affordance: the title text is interactive (double-click to edit)
+   even though the surrounding title row suppresses pointer events. */
+.state-node-title-text {
+  pointer-events: auto;
+  cursor: text;
+  border-radius: 4px;
+  padding: 0 2px;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: inherit;
+  background: transparent;
+  border: none;
+}
+
+.state-node-title-text:hover {
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.5);
+}
+
+.state-node-title-text:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* Inline editor used while renaming a state on the canvas. */
+.node-title-input {
+  pointer-events: auto;
+  width: min(180px, 100%);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.2;
+  color: inherit;
+  background: var(--node-input-bg, #1e293b);
+  border: 1px solid #60a5fa;
+  border-radius: 4px;
+  padding: 0 4px;
+  outline: none;
+}
+
 /* Atomic state body wraps title + action list. */
 .state-node-body {
   display: flex;
@@ -409,6 +451,60 @@ body {
 .transition-edge-cond {
   color: #fbbf24;
   font-size: 10px;
+}
+
+/* Interactive edge-label badge (rename / add). The label renderer is
+   absolutely positioned above the edge and is independently interactive. */
+.transition-edge-label-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: text;
+  border-radius: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.transition-edge-label-badge:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* Transitions without a label show a faint "+" pill that brightens on hover,
+   inviting the user to attach an event name to the (new) edge. */
+.transition-edge-label-empty {
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+}
+
+.transition-edge-label-empty:hover {
+  opacity: 1;
+}
+
+.transition-edge-label-empty .transition-edge-add {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 2px;
+}
+
+/* Inline editor used while renaming an edge's event label. */
+.edge-label-input {
+  width: 140px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #e2e8f0;
+  background: #0f172a;
+  border: 1px solid #60a5fa;
+  border-radius: 4px;
+  padding: 1px 4px;
+  outline: none;
 }
 
 /* Give edges a slightly wider arrow so direction is legible at low zoom, and

@@ -5,10 +5,11 @@ import { scxmlToFlow } from '@/bridge/scxmlToFlow';
 import { sourceToMonacoRange } from '@/bridge/sourceMapper';
 import { layoutScxmlGraph } from '@/layout/elkLayout';
 import { type CodeState, createCodeSlice, type SourceRange } from './slices/codeSlice';
+import { createEditSlice, type EditState } from './slices/editSlice';
 import { createGraphSlice, type GraphState } from './slices/graphSlice';
 import { createSyncSlice, type SyncState } from './slices/syncSlice';
 
-export interface EditorStore extends CodeState, GraphState, SyncState {
+export interface EditorStore extends CodeState, GraphState, SyncState, EditState {
   /** The parsed SCXML AST (single source of truth for structure). */
   ast: SCXMLDocument | null;
 
@@ -31,6 +32,7 @@ export const useEditorStore = create<EditorStore>()((set, get, api) => ({
   ...createCodeSlice(set, get, api),
   ...createGraphSlice(set, get, api),
   ...createSyncSlice(set, get, api),
+  ...createEditSlice(set, get, api),
 
   ast: null,
 

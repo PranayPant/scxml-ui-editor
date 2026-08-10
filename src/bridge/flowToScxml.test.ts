@@ -9,6 +9,7 @@ import {
   deleteState,
   persistNodePosition,
   renameStateId,
+  setTransitionLabel,
 } from './flowToScxml';
 import { collectStateNodes, readLayout } from './metadataRegistry';
 
@@ -90,6 +91,73 @@ describe('flowToScxml mutation isolation', () => {
     // idle:start now targets executing.
     const idle = stateWithTransitions(doc, 'idle');
     expect(idle.transitions.some((t) => t.target === 'executing')).toBe(true);
+  });
+});
+
+describe('setTransitionLabel (edge label editing)', () => {
+  it('sets an event label on an existing transition by stable id', () => {
+    const { data } = parseSCXMLPartial(BASE, { captureStringPositions: true });
+    const doc = data!;
+    // `idle:0` is the idle -> running transition (no label yet).
+    setTransitionLabel(doc, 'idle:0', 'START');
+    const idle = stateWithTransitions(doc, 'idle');
+    expect(idle.transitions.find((t) => t.id === 'idle:0')?.event).toBe('START');
+  });
+
+  it('updates an existing label to a new value', () => {
+    const scxml = `
+      <scxml xmlns="http://www.w3.org/2005/07/scxml">
+        <state id="a">
+          <transition event="GO" target="b">
+            <metadata><transitionId value="a:b" /></metadata>
+          </transition>
+        </state>
+        <state id="b" />
+      </scxml>
+    `;
+    const { data } = parseSCXMLPartial(scxml, { captureStringPositions: true });
+    const doc = data!;
+    setTransitionLabel(doc, 'a:b', 'NEXT');
+    const a = stateWithTransitions(doc, 'a');
+    const t = a.transitions.find((x) => x.id === 'a:b')!;
+    expect(t.event).toBe('NEXT');
+  });
+
+  it('clears the label when an empty event is passed', () => {
+    const scxml = `
+      <scxml xmlns="http://www.w3.org/2005/07/scxml">
+        <state id="a">
+          <transition event="GO" target="b">
+            <metadata><transitionId value="a:b" /></metadata>
+          </transition>
+        </state>
+        <state id="b" />
+      </scxml>
+    `;
+    const { data } = parseSCXMLPartial(scxml, { captureStringPositions: true });
+    const doc = data!;
+    setTransitionLabel(doc, 'a:b', '');
+    const a = stateWithTransitions(doc, 'a');
+    expect(a.transitions.find((x) => x.id === 'a:b')?.event).toBeUndefined();
+  });
+
+  it('sets a cond guard and clears it when empty', () => {
+    const { data } = parseSCXMLPartial(BASE, { captureStringPositions: true });
+    const doc = data!;
+    setTransitionLabel(doc, 'idle:0', 'START', 'x > 1');
+    const idle = stateWithTransitions(doc, 'idle');
+    expect(idle.transitions.find((t) => t.id === 'idle:0')?.cond).toBe('x > 1');
+    // Clear the condition.
+    setTransitionLabel(doc, 'idle:0', 'START', '');
+    expect(idle.transitions.find((t) => t.id === 'idle:0')?.cond).toBeUndefined();
+  });
+
+  it('is a no-op when the transition id does not exist', () => {
+    const { data } = parseSCXMLPartial(BASE, { captureStringPositions: true });
+    const doc = data!;
+    expect(() => setTransitionLabel(doc, 'missing:edge', 'E')).not.toThrow();
+    // Document is otherwise untouched.
+    expect(collectStateNodes(doc).some((n) => n.id === 'running')).toBe(true);
   });
 });
 

@@ -8,6 +8,7 @@ import {
   type SCXMLDocument,
   type StateNodeLike,
   type Transition,
+  walkTransitions,
 } from 'scxml-parser';
 import { collectStateNodes, writeLayout, writeTransitionId } from './metadataRegistry';
 import { transitionEdgeId } from './scxmlToFlow';
@@ -105,6 +106,34 @@ export function deleteState(doc: SCXMLDocument, stateId: string): void {
 /** Remove an edge/transition by its stable id. */
 export function deleteEdge(doc: SCXMLDocument, edgeId: string): void {
   removeTransition(doc, edgeId);
+}
+
+/**
+ * Set (or clear) the label — the `event` trigger and optional `cond` guard —
+ * on the transition identified by its stable edge id. `walkTransitions`
+ * locates the transition wherever it lives (state / parallel / initial /
+ * history). An empty `event` clears the trigger so an unlabeled edge renders
+ * without a badge.
+ */
+export function setTransitionLabel(
+  doc: SCXMLDocument,
+  edgeId: string,
+  event: string,
+  cond?: string,
+): void {
+  walkTransitions(doc, (t) => {
+    if (t.id !== edgeId) return;
+    if (event === undefined || event === '') {
+      delete t.event;
+    } else {
+      t.event = event;
+    }
+    if (cond === undefined || cond === '') {
+      delete t.cond;
+    } else {
+      t.cond = cond;
+    }
+  });
 }
 
 /** Rename a state, cascading across transitions/initial refs. */

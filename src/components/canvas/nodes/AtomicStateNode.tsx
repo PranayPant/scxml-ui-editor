@@ -1,6 +1,7 @@
 import type { NodeProps } from '@xyflow/react';
 import { memo } from 'react';
 import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
+import { EditableNodeTitle } from './EditableNodeTitle';
 import { StateNodeWrapper } from './StateNodeWrapper';
 
 /**
@@ -8,7 +9,10 @@ import { StateNodeWrapper } from './StateNodeWrapper';
  * bullseye-icon card. Both share the same handle wiring; the `data.kind ===
  * "final"` flag selects the final-state visual.
  */
-export const AtomicStateNode = memo(function AtomicStateNode({ data }: NodeProps<ScxmlFlowNode>) {
+export const AtomicStateNode = memo(function AtomicStateNode({
+  id,
+  data,
+}: NodeProps<ScxmlFlowNode>) {
   const isFinal = data.kind === 'final';
   return (
     <StateNodeWrapper
@@ -21,12 +25,12 @@ export const AtomicStateNode = memo(function AtomicStateNode({ data }: NodeProps
           <div className="state-final-icon">
             <div className="state-final-icon-core" />
           </div>
-          <span className="state-node-title">{data.label}</span>
+          <EditableNodeTitle nodeId={id} label={data.label} />
         </div>
       ) : (
         <div className="state-node-body">
           <div className="state-node-title-row">
-            <span className="state-node-title">{data.label}</span>
+            <EditableNodeTitle nodeId={id} label={data.label} />
           </div>
           {data.actions && (
             <div className="state-node-actions">

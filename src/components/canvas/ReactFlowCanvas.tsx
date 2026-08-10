@@ -61,6 +61,7 @@ export function ReactFlowCanvas() {
   const livePreviewPaused = useEditorStore((s) => s.livePreviewPaused);
   const selectElement = useEditorStore((s) => s.selectElement);
   const applyAstMutation = useEditorStore((s) => s.applyAstMutation);
+  const setEditingLabel = useEditorStore((s) => s.setEditingLabel);
 
   const [nodes, setNodes] = useNodesState<ScxmlFlowNode>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
@@ -114,11 +115,16 @@ export function ReactFlowCanvas() {
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
+      let newEdgeId: string | null = null;
       applyAstMutation((doc) => {
-        connectStates(doc, connection.source!, connection.target!);
+        const t = connectStates(doc, connection.source!, connection.target!);
+        if (t?.id) newEdgeId = t.id;
       });
+      // Open the label editor immediately so the user can attach an event
+      // name to a freshly-created (currently unlabeled) transition.
+      if (newEdgeId) setEditingLabel(newEdgeId, 'edge');
     },
-    [applyAstMutation],
+    [applyAstMutation, setEditingLabel],
   );
 
   // ------------------------------------------------ delete -> removeState/edge
@@ -149,6 +155,24 @@ export function ReactFlowCanvas() {
   const handlePaneClick = useCallback(() => {
     selectElement(null, 'CANVAS');
   }, [selectElement]);
+
+  // ------------------------------------------------ label editing (rename)
+  const handleNodeDoubleClick = useCallback(
+    (_event: unknown, node: ScxmlFlowNode) => {
+      // Pseudo-nodes (initial indicator, history) can't be renamed.
+      if (node.id.startsWith('__')) return;
+      setEditingLabel(node.id, 'node');
+    },
+    [setEditingLabel],
+  );
+
+  const handleEdgeDoubleClick = useCallback(
+    (_event: unknown, edge: Edge) => {
+      if (edge.id.startsWith('__')) return;
+      setEditingLabel(edge.id, 'edge');
+    },
+    [setEditingLabel],
+  );
 
   // ------------------------------------------------ drop from palette
   const addNewState = useCallback(
@@ -201,6 +225,8 @@ export function ReactFlowCanvas() {
         onNodeDragStop={handleNodeDragStop}
         onDelete={handleDelete}
         onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        onEdgeDoubleClick={handleEdgeDoubleClick}
         onPaneClick={handlePaneClick}
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}

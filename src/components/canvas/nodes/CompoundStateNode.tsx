@@ -1,6 +1,7 @@
 import type { NodeProps } from '@xyflow/react';
 import { memo } from 'react';
 import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
+import { EditableNodeTitle } from './EditableNodeTitle';
 import { StateNodeWrapper } from './StateNodeWrapper';
 
 /**
@@ -9,12 +10,13 @@ import { StateNodeWrapper } from './StateNodeWrapper';
  * and title bar around the nested sub-flow.
  */
 export const CompoundStateNode = memo(function CompoundStateNode({
+  id,
   data,
 }: NodeProps<ScxmlFlowNode>) {
   return (
     <StateNodeWrapper className="state-node state-node-compound state-node-container state-node-hover">
       <div className="state-node-title-row">
-        <span className="state-node-title">{data.label}</span>
+        <EditableNodeTitle nodeId={id} label={data.label} />
       </div>
       <div className="state-node-actions">
         {data.actions?.onentry?.map((a) => (
