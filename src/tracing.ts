@@ -43,11 +43,10 @@ registerInstrumentations({
   instrumentations: [
     new FetchInstrumentation({
       clearTimingResources: true,
-      // Disable traceparent header propagation — the Elixir engine has no
-      // CORS configuration, so the browser blocks cross-origin requests
-      // carrying the non-standard `traceparent` header. We only need local
-      // span collection, not remote context propagation.
-      propagateTraceHeaderCorsUrls: [],
+      // Propagate traceparent to the engine so spans are linked across the
+      // HTTP boundary. The engine's CORS config (cors_plug) allows the
+      // traceparent header through.
+      propagateTraceHeaderCorsUrls: [new RegExp("http://localhost:4000")],
     }),
     new UserInteractionInstrumentation({
       eventNames: ["click"],
