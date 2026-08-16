@@ -58,7 +58,7 @@ importers:
         version: https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32
       scxml-parser:
         specifier: github:PranayPant/scxml-parser#main
-        version: https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0
+        version: https://codeload.github.com/PranayPant/scxml-parser/tar.gz/121f28d8dcd636b1a27853af6aa7844d6ad63a1a
       tslog:
         specifier: ^5.1.0
         version: 5.1.0
@@ -1715,8 +1715,8 @@ packages:
     resolution: {tarball: https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32}
     version: 0.1.0
 
-  scxml-parser@https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0:
-    resolution: {tarball: https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0}
+  scxml-parser@https://codeload.github.com/PranayPant/scxml-parser/tar.gz/121f28d8dcd636b1a27853af6aa7844d6ad63a1a:
+    resolution: {tarball: https://codeload.github.com/PranayPant/scxml-parser/tar.gz/121f28d8dcd636b1a27853af6aa7844d6ad63a1a}
     version: 0.0.1
 
   semver@6.3.1:
@@ -3460,7 +3460,7 @@ snapshots:
 
   scxml-http-browser-client@https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32: {}
 
-  scxml-parser@https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0:
+  scxml-parser@https://codeload.github.com/PranayPant/scxml-parser/tar.gz/121f28d8dcd636b1a27853af6aa7844d6ad63a1a:
     dependencies:
       fast-xml-parser: 4.5.7
 
