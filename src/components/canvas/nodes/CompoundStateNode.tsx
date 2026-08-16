@@ -1,8 +1,8 @@
-import type { NodeProps } from '@xyflow/react';
-import { memo } from 'react';
-import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
-import { EditableNodeTitle } from './EditableNodeTitle';
-import { StateNodeWrapper } from './StateNodeWrapper';
+import type { NodeProps } from "@xyflow/react";
+import { memo } from "react";
+import type { ScxmlFlowNode } from "@/bridge/scxmlToFlow";
+import { EditableNodeTitle } from "./EditableNodeTitle";
+import { StateNodeWrapper } from "./StateNodeWrapper";
 
 /**
  * Compound (nested) state. React Flow renders its sub-states as children via
@@ -14,7 +14,10 @@ export const CompoundStateNode = memo(function CompoundStateNode({
   data,
 }: NodeProps<ScxmlFlowNode>) {
   return (
-    <StateNodeWrapper className="state-node state-node-compound state-node-container state-node-hover">
+    <StateNodeWrapper
+      nodeId={id}
+      className="state-node state-node-compound state-node-container state-node-hover"
+    >
       <div className="state-node-title-row">
         <EditableNodeTitle nodeId={id} label={data.label} />
       </div>

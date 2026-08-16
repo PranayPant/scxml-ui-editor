@@ -1,8 +1,8 @@
-import type { NodeProps } from '@xyflow/react';
-import { memo } from 'react';
-import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
-import { EditableNodeTitle } from './EditableNodeTitle';
-import { StateNodeWrapper } from './StateNodeWrapper';
+import type { NodeProps } from "@xyflow/react";
+import { memo } from "react";
+import type { ScxmlFlowNode } from "@/bridge/scxmlToFlow";
+import { EditableNodeTitle } from "./EditableNodeTitle";
+import { StateNodeWrapper } from "./StateNodeWrapper";
 
 /**
  * Atomic state card (solid border) plus the final state as a compact
@@ -13,11 +13,12 @@ export const AtomicStateNode = memo(function AtomicStateNode({
   id,
   data,
 }: NodeProps<ScxmlFlowNode>) {
-  const isFinal = data.kind === 'final';
+  const isFinal = data.kind === "final";
   return (
     <StateNodeWrapper
+      nodeId={id}
       className={`state-node state-node-hover ${
-        isFinal ? 'state-node-final' : 'state-node-atomic'
+        isFinal ? "state-node-final" : "state-node-atomic"
       }`}
     >
       {isFinal ? (
@@ -35,13 +36,19 @@ export const AtomicStateNode = memo(function AtomicStateNode({
           {data.actions && (
             <div className="state-node-actions">
               {data.actions.onentry?.map((a) => (
-                <div key={`entry-${a}`} className="state-action state-action-entry">
+                <div
+                  key={`entry-${a}`}
+                  className="state-action state-action-entry"
+                >
                   <span className="state-action-kind">entry</span>
                   <span className="state-action-text">{a}</span>
                 </div>
               ))}
               {data.actions.onexit?.map((a) => (
-                <div key={`exit-${a}`} className="state-action state-action-exit">
+                <div
+                  key={`exit-${a}`}
+                  className="state-action state-action-exit"
+                >
                   <span className="state-action-kind">exit</span>
                   <span className="state-action-text">{a}</span>
                 </div>

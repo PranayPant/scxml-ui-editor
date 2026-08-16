@@ -10,25 +10,26 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
-} from '@xyflow/react';
-import { useCallback, useEffect, useRef } from 'react';
+} from "@xyflow/react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   addStateNode,
   connectStates,
   deleteEdge,
   deleteState,
   persistNodePosition,
-} from '@/bridge/flowToScxml';
-import { type ScxmlFlowNode, scxmlToFlow } from '@/bridge/scxmlToFlow';
-import { useEditorStore } from '@/store/useEditorStore';
-import { CanvasControls } from './controls/CanvasControls';
-import { NodePalette } from './controls/NodePalette';
-import { TransitionEdgeComponent } from './edges/TransitionEdge';
-import { AtomicStateNode } from './nodes/AtomicStateNode';
-import { CompoundStateNode } from './nodes/CompoundStateNode';
-import { HistoryNode } from './nodes/HistoryNode';
-import { InitialIndicatorNode } from './nodes/InitialIndicatorNode';
-import { ParallelNode } from './nodes/ParallelNode';
+} from "@/bridge/flowToScxml";
+import { type ScxmlFlowNode, scxmlToFlow } from "@/bridge/scxmlToFlow";
+import { useEditorStore } from "@/store/useEditorStore";
+import { CanvasControls } from "./controls/CanvasControls";
+import { ExecutionControls } from "./controls/ExecutionControls";
+import { NodePalette } from "./controls/NodePalette";
+import { TransitionEdgeComponent } from "./edges/TransitionEdge";
+import { AtomicStateNode } from "./nodes/AtomicStateNode";
+import { CompoundStateNode } from "./nodes/CompoundStateNode";
+import { HistoryNode } from "./nodes/HistoryNode";
+import { InitialIndicatorNode } from "./nodes/InitialIndicatorNode";
+import { ParallelNode } from "./nodes/ParallelNode";
 
 const nodeTypes: NodeTypes = {
   atomic: AtomicStateNode,
@@ -44,9 +45,9 @@ const edgeTypes: EdgeTypes = {
 
 /** Stable signature of a nodes/edges snapshot to detect re-seeding. */
 function snapshotKey(nodes: ScxmlFlowNode[], edges: any[]): string {
-  return `${nodes.map((n) => `${n.id}:${n.position.x},${n.position.y}`).join('|')}|${edges
+  return `${nodes.map((n) => `${n.id}:${n.position.x},${n.position.y}`).join("|")}|${edges
     .map((e) => e.id)
-    .join('|')}`;
+    .join("|")}`;
 }
 
 /**
@@ -74,7 +75,7 @@ export function ReactFlowCanvas() {
   }, [nodes]);
 
   // ------------------------------------------------ re-seed from AST/code
-  const lastSnapshot = useRef<string>('');
+  const lastSnapshot = useRef<string>("");
   useEffect(() => {
     if (!ast) return;
     const { nodes: flowNodes, edges: flowEdges } = scxmlToFlow(ast);
@@ -105,7 +106,13 @@ export function ReactFlowCanvas() {
     (_event: unknown, node: ScxmlFlowNode) => {
       const currentNodes = nodesRef.current;
       applyAstMutation((doc) => {
-        persistNodePosition(doc, currentNodes, node.id, node.position.x, node.position.y);
+        persistNodePosition(
+          doc,
+          currentNodes,
+          node.id,
+          node.position.x,
+          node.position.y,
+        );
       });
     },
     [applyAstMutation],
@@ -122,7 +129,7 @@ export function ReactFlowCanvas() {
       });
       // Open the label editor immediately so the user can attach an event
       // name to a freshly-created (currently unlabeled) transition.
-      if (newEdgeId) setEditingLabel(newEdgeId, 'edge');
+      if (newEdgeId) setEditingLabel(newEdgeId, "edge");
     },
     [applyAstMutation, setEditingLabel],
   );
@@ -132,11 +139,11 @@ export function ReactFlowCanvas() {
     (params: { nodes: ScxmlFlowNode[]; edges: any[] }) => {
       // Skip pseudo-nodes (e.g. the `__initial__` indicator) — they aren't
       // real SCXML states and deleting them would orphan the entry marker.
-      const realNodes = params.nodes.filter((n) => !n.id.startsWith('__'));
+      const realNodes = params.nodes.filter((n) => !n.id.startsWith("__"));
       if (realNodes.length === 0 && params.edges.length === 0) return;
       applyAstMutation((doc) => {
         for (const edge of params.edges) {
-          if (!edge.id.startsWith('__')) deleteEdge(doc, edge.id);
+          if (!edge.id.startsWith("__")) deleteEdge(doc, edge.id);
         }
         for (const node of realNodes) deleteState(doc, node.id);
       });
@@ -147,36 +154,40 @@ export function ReactFlowCanvas() {
   // ------------------------------------------------ selection sync
   const handleNodeClick = useCallback(
     (_event: unknown, node: ScxmlFlowNode) => {
-      selectElement(node.id, 'CANVAS');
+      selectElement(node.id, "CANVAS");
     },
     [selectElement],
   );
 
   const handlePaneClick = useCallback(() => {
-    selectElement(null, 'CANVAS');
+    selectElement(null, "CANVAS");
   }, [selectElement]);
 
   // ------------------------------------------------ label editing (rename)
   const handleNodeDoubleClick = useCallback(
     (_event: unknown, node: ScxmlFlowNode) => {
       // Pseudo-nodes (initial indicator, history) can't be renamed.
-      if (node.id.startsWith('__')) return;
-      setEditingLabel(node.id, 'node');
+      if (node.id.startsWith("__")) return;
+      setEditingLabel(node.id, "node");
     },
     [setEditingLabel],
   );
 
   const handleEdgeDoubleClick = useCallback(
     (_event: unknown, edge: Edge) => {
-      if (edge.id.startsWith('__')) return;
-      setEditingLabel(edge.id, 'edge');
+      if (edge.id.startsWith("__")) return;
+      setEditingLabel(edge.id, "edge");
     },
     [setEditingLabel],
   );
 
   // ------------------------------------------------ drop from palette
   const addNewState = useCallback(
-    (kind: 'atomic' | 'compound' | 'parallel' | 'final', x: number, y: number) => {
+    (
+      kind: "atomic" | "compound" | "parallel" | "final",
+      x: number,
+      y: number,
+    ) => {
       const id = `${kind}_${Date.now().toString(36)}`;
       // Persist an initial layout via a synthetic mutation; addStateNode models
       // all kinds as <state> in the AST, then we record the drop coordinates.
@@ -192,12 +203,12 @@ export function ReactFlowCanvas() {
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      const kind = event.dataTransfer.getData('application/scxml-node') as
-        | 'atomic'
-        | 'compound'
-        | 'parallel'
-        | 'final'
-        | '';
+      const kind = event.dataTransfer.getData("application/scxml-node") as
+        | "atomic"
+        | "compound"
+        | "parallel"
+        | "final"
+        | "";
       if (!kind) return;
       const flow = dropTargetRef.current;
       const bounds = flow?.getBoundingClientRect();
@@ -232,15 +243,18 @@ export function ReactFlowCanvas() {
         onDragOver={(e) => e.preventDefault()}
         fitView
         nodesConnectable
-        deleteKeyCode={['Backspace', 'Delete']}
+        deleteKeyCode={["Backspace", "Delete"]}
         proOptions={{ hideAttribution: true }}
       >
         <NodePalette />
         <CanvasControls />
+        <ExecutionControls />
       </ReactFlow>
 
       {livePreviewPaused && (
-        <div className="preview-banner">Live preview paused — syntax error in the XML</div>
+        <div className="preview-banner">
+          Live preview paused — syntax error in the XML
+        </div>
       )}
     </div>
   );

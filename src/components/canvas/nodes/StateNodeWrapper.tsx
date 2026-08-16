@@ -1,11 +1,14 @@
-import { Handle, Position } from '@xyflow/react';
-import type { ReactNode } from 'react';
+import { Handle, Position } from "@xyflow/react";
+import type { ReactNode } from "react";
+import { useExecutionOverlay } from "@/plugins/engine";
 
 interface Props {
   children: ReactNode;
   className?: string;
   /** Optional native tooltip forwarded to the wrapping div. */
   title?: string;
+  /** The node ID to look up in the execution overlay. */
+  nodeId?: string;
 }
 
 /**
@@ -20,10 +23,33 @@ interface Props {
  * Handles are hidden by default and revealed on node hover via `group-hover`
  * (see `src/index.css`), keeping the DOM footprint low while remaining
  * interactive on hover.
+ *
+ * When execution mode is active, applies execution-aware styling:
+ * - Active state: green glow
+ * - Exiting state: red fade-out
+ * - Inactive state: dimmed
  */
-export function StateNodeWrapper({ children, className = '', title }: Props) {
+export function StateNodeWrapper({
+  children,
+  className = "",
+  title,
+  nodeId,
+}: Props) {
+  const { mode, activeStateIds, previousStateIds } = useExecutionOverlay();
+
+  let execClass = "";
+  if (mode !== "idle" && nodeId) {
+    if (activeStateIds.includes(nodeId)) {
+      execClass = " state-node-active";
+    } else if (previousStateIds.includes(nodeId)) {
+      execClass = " state-node-exiting";
+    } else {
+      execClass = " state-node-dimmed";
+    }
+  }
+
   return (
-    <div className={`group relative ${className}`} title={title}>
+    <div className={`group relative ${className}${execClass}`} title={title}>
       {/* Target handles (incoming edges) */}
       <Handle
         id="target-top"

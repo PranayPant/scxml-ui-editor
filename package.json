@@ -20,13 +20,23 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.221.0",
+    "@opentelemetry/instrumentation": "^0.221.0",
+    "@opentelemetry/instrumentation-fetch": "^0.221.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.65.0",
+    "@opentelemetry/resources": "^2.10.0",
+    "@opentelemetry/sdk-trace-web": "^2.10.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
     "@xyflow/react": "^12.0.0",
     "elkjs": "^0.9.3",
     "monaco-editor": "^0.52.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^2.1.7",
+    "scxml-http-browser-client": "github:PranayPant/scxml-http-browser-client#master",
     "scxml-parser": "github:PranayPant/scxml-parser#main",
+    "tslog": "^5.1.0",
     "zustand": "^4.5.5"
   },
   "devDependencies": {

@@ -1,18 +1,22 @@
-import type { NodeProps } from '@xyflow/react';
-import { memo } from 'react';
-import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
-import { StateNodeWrapper } from './StateNodeWrapper';
+import type { NodeProps } from "@xyflow/react";
+import { memo } from "react";
+import type { ScxmlFlowNode } from "@/bridge/scxmlToFlow";
+import { StateNodeWrapper } from "./StateNodeWrapper";
 
 /**
  * Deep / shallow history pseudo-state. `data.scxmlType` distinguishes
  * "deep" vs "shallow"; renders as a circled "H".
  */
-export const HistoryNode = memo(function HistoryNode({ data }: NodeProps<ScxmlFlowNode>) {
-  const deep = data.scxmlType === 'deep';
+export const HistoryNode = memo(function HistoryNode({
+  id,
+  data,
+}: NodeProps<ScxmlFlowNode>) {
+  const deep = data.scxmlType === "deep";
   return (
     <StateNodeWrapper
+      nodeId={id}
       className="state-node state-node-history state-node-hover"
-      title={deep ? 'Deep history' : 'Shallow history'}
+      title={deep ? "Deep history" : "Shallow history"}
     >
       <div className="history-circle">
         <span className="history-letter">H</span>

@@ -9,6 +9,10 @@ interface ToolbarProps {
   onResetSplit: () => void;
   /** Export the current SCXML document as a file download. */
   onExport: () => void;
+  /** Toggle the engine panel visibility. */
+  onToggleEngine: () => void;
+  /** Whether the engine panel is currently open. */
+  enginePanelOpen: boolean;
 }
 
 /**
@@ -22,6 +26,8 @@ export function Toolbar({
   onMaximizeCanvas,
   onResetSplit,
   onExport,
+  onToggleEngine,
+  enginePanelOpen,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -35,6 +41,16 @@ export function Toolbar({
       </div>
 
       <div className="toolbar-group toolbar-spacer" />
+
+      <div className="toolbar-group">
+        <button
+          type="button"
+          onClick={onToggleEngine}
+          title="Toggle engine panel"
+        >
+          {enginePanelOpen ? "⚡ Engine" : "⚡ Engine"}
+        </button>
+      </div>
 
       <div className="toolbar-group">
         <button type="button" onClick={onMaximizeCode} title="Code only">

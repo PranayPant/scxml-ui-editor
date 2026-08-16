@@ -6,6 +6,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# OpenTelemetry trace output
+.otlp-traces.log
+
 node_modules
 dist
 dist-ssr

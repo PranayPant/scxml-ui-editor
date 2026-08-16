@@ -1,18 +1,19 @@
-import { useMonaco } from '@monaco-editor/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useMonaco } from "@monaco-editor/react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   type ImperativePanelHandle,
   Panel,
   PanelGroup,
   PanelResizeHandle,
-} from 'react-resizable-panels';
-import { collectStateNodes, writeLayout } from '@/bridge/metadataRegistry';
-import { DEFAULT_SCXML } from '@/bridge/sampleDocument';
-import { ReactFlowCanvas } from '@/components/canvas/ReactFlowCanvas';
-import { layoutScxmlGraph } from '@/layout/elkLayout';
-import { useEditorStore } from '@/store/useEditorStore';
-import { MonacoEditor } from './MonacoEditor';
-import { Toolbar } from './Toolbar';
+} from "react-resizable-panels";
+import { collectStateNodes, writeLayout } from "@/bridge/metadataRegistry";
+import { DEFAULT_SCXML } from "@/bridge/sampleDocument";
+import { ReactFlowCanvas } from "@/components/canvas/ReactFlowCanvas";
+import { EnginePanel, useEngineStore } from "@/plugins/engine";
+import { layoutScxmlGraph } from "@/layout/elkLayout";
+import { useEditorStore } from "@/store/useEditorStore";
+import { MonacoEditor } from "./MonacoEditor";
+import { Toolbar } from "./Toolbar";
 
 /**
  * Root layout for the editor: a resizable split between the Monaco code
@@ -35,11 +36,11 @@ export function EditorShell() {
 
   const handleExport = useCallback(() => {
     const rawXml = useEditorStore.getState().rawXml;
-    const blob = new Blob([rawXml], { type: 'application/xml' });
+    const blob = new Blob([rawXml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'statechart.scxml';
+    a.download = "statechart.scxml";
     a.click();
     URL.revokeObjectURL(url);
   }, []);
@@ -73,6 +74,9 @@ export function EditorShell() {
     canvasPanelRef.current?.resize(60);
   };
 
+  const enginePanelOpen = useEngineStore((s) => s.panelOpen);
+  const togglePanel = useEngineStore((s) => s.togglePanel);
+
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <Toolbar
@@ -81,10 +85,22 @@ export function EditorShell() {
         onMaximizeCanvas={maximizeCanvas}
         onResetSplit={resetSplit}
         onExport={handleExport}
+        onToggleEngine={togglePanel}
+        enginePanelOpen={enginePanelOpen}
       />
 
-      <PanelGroup direction="horizontal" autoSaveId="scxml-editor-split" className="flex-1">
-        <Panel ref={codePanelRef} defaultSize={40} minSize={15} collapsible className="relative">
+      <PanelGroup
+        direction="horizontal"
+        autoSaveId="scxml-editor-split"
+        className="flex-1"
+      >
+        <Panel
+          ref={codePanelRef}
+          defaultSize={40}
+          minSize={15}
+          collapsible
+          className="relative"
+        >
           <MonacoEditor />
         </Panel>
 
@@ -92,8 +108,15 @@ export function EditorShell() {
           <div className="h-8 w-1 rounded-full bg-neutral-400" />
         </PanelResizeHandle>
 
-        <Panel ref={canvasPanelRef} defaultSize={60} minSize={20} collapsible className="relative">
+        <Panel
+          ref={canvasPanelRef}
+          defaultSize={60}
+          minSize={20}
+          collapsible
+          className="relative"
+        >
           <ReactFlowCanvas />
+          {enginePanelOpen && <EnginePanel />}
         </Panel>
       </PanelGroup>
     </div>

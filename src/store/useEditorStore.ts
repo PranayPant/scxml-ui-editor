@@ -1,15 +1,26 @@
-import { parseSCXMLPartial, type SCXMLDocument, serializeSCXML } from 'scxml-parser';
-import { create } from 'zustand';
-import { collectStateNodes, writeLayout } from '@/bridge/metadataRegistry';
-import { scxmlToFlow } from '@/bridge/scxmlToFlow';
-import { sourceToMonacoRange } from '@/bridge/sourceMapper';
-import { layoutScxmlGraph } from '@/layout/elkLayout';
-import { type CodeState, createCodeSlice, type SourceRange } from './slices/codeSlice';
-import { createEditSlice, type EditState } from './slices/editSlice';
-import { createGraphSlice, type GraphState } from './slices/graphSlice';
-import { createSyncSlice, type SyncState } from './slices/syncSlice';
+import {
+  parseSCXMLPartial,
+  type SCXMLDocument,
+  serializeSCXML,
+} from "scxml-parser";
+import { create } from "zustand";
+import { collectStateNodes, writeLayout } from "@/bridge/metadataRegistry";
+import { scxmlToFlow } from "@/bridge/scxmlToFlow";
+import { sourceToMonacoRange } from "@/bridge/sourceMapper";
+import { layoutScxmlGraph } from "@/layout/elkLayout";
+import { logger } from "@/plugins/tracing/logger";
+import { tracer, withSpanSync } from "@/plugins/tracing/withSpan";
+import {
+  type CodeState,
+  createCodeSlice,
+  type SourceRange,
+} from "./slices/codeSlice";
+import { createEditSlice, type EditState } from "./slices/editSlice";
+import { createGraphSlice, type GraphState } from "./slices/graphSlice";
+import { createSyncSlice, type SyncState } from "./slices/syncSlice";
 
-export interface EditorStore extends CodeState, GraphState, SyncState, EditState {
+export interface EditorStore
+  extends CodeState, GraphState, SyncState, EditState {
   /** The parsed SCXML AST (single source of truth for structure). */
   ast: SCXMLDocument | null;
 
@@ -23,7 +34,7 @@ export interface EditorStore extends CodeState, GraphState, SyncState, EditState
   /** Apply an AST mutation then re-serialize AND re-render both views. */
   applyAstMutation: (mutationFn: (ast: SCXMLDocument) => void) => void;
   /** Two-way selection sync between views. */
-  selectElement: (id: string | null, source: 'CODE' | 'CANVAS') => void;
+  selectElement: (id: string | null, source: "CODE" | "CANVAS") => void;
   /** Highlight a source range in Monaco from a canvas selection. */
   selectSourceRange: (range: SourceRange | null) => void;
 }
@@ -39,84 +50,98 @@ export const useEditorStore = create<EditorStore>()((set, get, api) => ({
   setAst: (ast) => set({ ast }),
 
   seedStore: (xml) => {
-    get().beginTransaction('CODE');
-    set({ rawXml: xml });
+    withSpanSync(tracer, "seedStore", () => {
+      logger.info("Seeding editor");
 
-    const result = parseSCXMLPartial(xml, { captureStringPositions: true });
-    const livePreviewPaused = !result.recoverable;
-    set({ ast: result.data });
-    get().setParseErrors(result.errors, livePreviewPaused);
+      get().beginTransaction("CODE");
+      set({ rawXml: xml });
 
-    const { nodes, edges, needsAutoLayout } = scxmlToFlow(result.data);
-    get().setNodesAndEdges(nodes, edges);
-    get().setSelectedNodeId(null);
+      const result = parseSCXMLPartial(xml, { captureStringPositions: true });
+      const livePreviewPaused = !result.recoverable;
+      set({ ast: result.data });
+      get().setParseErrors(result.errors, livePreviewPaused);
 
-    // Kick off an ELK pass once if any node lacks saved coordinates.
-    if (needsAutoLayout) {
-      void layoutScxmlGraph(nodes, edges).then((laid) => {
-        get().applyAstMutation((doc) => {
-          const nodeMap = new Map(laid.map((n) => [n.id, n] as const));
-          for (const node of collectStateNodes(doc)) {
-            const laidNode = nodeMap.get(node.id);
-            if (!laidNode) continue;
-            writeLayout(node, {
-              x: laidNode.position.x,
-              y: laidNode.position.y,
-            });
-          }
-        });
+      const { nodes, edges, needsAutoLayout } = scxmlToFlow(result.data);
+      logger.debug("Parse result", {
+        states: nodes.length,
+        transitions: edges.length,
       });
-    }
+      get().setNodesAndEdges(nodes, edges);
+      get().setSelectedNodeId(null);
 
-    get().endTransaction();
+      // Kick off an ELK pass once if any node lacks saved coordinates.
+      if (needsAutoLayout) {
+        void layoutScxmlGraph(nodes, edges).then((laid) => {
+          get().applyAstMutation((doc) => {
+            const nodeMap = new Map(laid.map((n) => [n.id, n] as const));
+            for (const node of collectStateNodes(doc)) {
+              const laidNode = nodeMap.get(node.id);
+              if (!laidNode) continue;
+              writeLayout(node, {
+                x: laidNode.position.x,
+                y: laidNode.position.y,
+              });
+            }
+          });
+        });
+      }
+
+      get().endTransaction();
+    });
   },
 
   // ------------------------------------------------------------------
   // CODE -> AST -> CANVAS
   // ------------------------------------------------------------------
   updateCodeFromUser: (xml) => {
-    const { syncOrigin } = get();
-    // Guard: ignore text pushed back from a CANVAS transaction.
-    if (syncOrigin === 'CANVAS') return;
+    withSpanSync(tracer, "updateCodeFromUser", () => {
+      logger.debug("Code updated from user");
+      const { syncOrigin } = get();
+      // Guard: ignore text pushed back from a CANVAS transaction.
+      if (syncOrigin === "CANVAS") return;
 
-    get().beginTransaction('CODE');
-    set({ rawXml: xml });
+      get().beginTransaction("CODE");
+      set({ rawXml: xml });
 
-    const result = parseSCXMLPartial(xml, { captureStringPositions: true });
-    const livePreviewPaused = !result.recoverable;
+      const result = parseSCXMLPartial(xml, { captureStringPositions: true });
+      const livePreviewPaused = !result.recoverable;
 
-    set({ ast: result.data });
-    get().setParseErrors(result.errors, livePreviewPaused);
+      set({ ast: result.data });
+      get().setParseErrors(result.errors, livePreviewPaused);
 
-    const { nodes, edges } = scxmlToFlow(result.data);
-    // Patch canvas while preserving selection where still valid.
-    const currentSel = get().selectedNodeId;
-    get().setNodesAndEdges(nodes, edges);
-    if (currentSel && !nodes.some((n) => n.id === currentSel)) {
-      get().setSelectedNodeId(null);
-    }
+      const { nodes, edges } = scxmlToFlow(result.data);
+      // Patch canvas while preserving selection where still valid.
+      const currentSel = get().selectedNodeId;
+      get().setNodesAndEdges(nodes, edges);
+      if (currentSel && !nodes.some((n) => n.id === currentSel)) {
+        get().setSelectedNodeId(null);
+      }
 
-    get().endTransaction();
+      get().endTransaction();
+    });
   },
 
   // ------------------------------------------------------------------
   // AST MUTATION -> reserialize + re-render both views
   // ------------------------------------------------------------------
   applyAstMutation: (mutationFn) => {
-    const ast = get().ast;
-    if (!ast) return;
+    withSpanSync(tracer, "applyAstMutation", () => {
+      logger.debug("AST mutation applied");
+      const ast = get().ast;
+      if (!ast) return;
 
-    get().beginTransaction('CANVAS');
-    const nextDoc = structuredClone(ast);
-    mutationFn(nextDoc);
+      get().beginTransaction("CANVAS");
+      const nextDoc = structuredClone(ast);
+      mutationFn(nextDoc);
 
-    const xml = serializeSCXML(nextDoc);
-    set({ ast: nextDoc, rawXml: xml });
+      const xml = serializeSCXML(nextDoc);
+      set({ ast: nextDoc, rawXml: xml });
 
-    const { nodes, edges } = scxmlToFlow(nextDoc);
-    get().setNodesAndEdges(nodes, edges);
+      const { nodes, edges } = scxmlToFlow(nextDoc);
+      get().setNodesAndEdges(nodes, edges);
 
-    get().endTransaction();
+      get().endTransaction();
+    });
   },
 
   // ------------------------------------------------------------------
@@ -125,7 +150,7 @@ export const useEditorStore = create<EditorStore>()((set, get, api) => ({
   selectElement: (id, source) => {
     get().setSelectedNodeId(id);
 
-    if (source === 'CANVAS' && id && get().ast) {
+    if (source === "CANVAS" && id && get().ast) {
       const range = sourceToMonacoRange(get().ast, id);
       get().setActiveSourceRange(range);
     }
