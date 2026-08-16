@@ -55,7 +55,7 @@ importers:
         version: 2.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       scxml-http-browser-client:
         specifier: github:PranayPant/scxml-http-browser-client#master
-        version: https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/5d66f74723baf674aefa000813797d9f228508fa
+        version: https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32
       scxml-parser:
         specifier: github:PranayPant/scxml-parser#main
         version: https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0
@@ -1711,8 +1711,8 @@ packages:
   scheduler@0.23.2:
     resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
 
-  scxml-http-browser-client@https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/5d66f74723baf674aefa000813797d9f228508fa:
-    resolution: {tarball: https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/5d66f74723baf674aefa000813797d9f228508fa}
+  scxml-http-browser-client@https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32:
+    resolution: {tarball: https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32}
     version: 0.1.0
 
   scxml-parser@https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0:
@@ -3458,7 +3458,7 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  scxml-http-browser-client@https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/5d66f74723baf674aefa000813797d9f228508fa: {}
+  scxml-http-browser-client@https://codeload.github.com/PranayPant/scxml-http-browser-client/tar.gz/51c24e66e9efdf37adc88e2e7793171bb1284a32: {}
 
   scxml-parser@https://codeload.github.com/PranayPant/scxml-parser/tar.gz/a31b6e240b97c023c36aec1d6487fe4fd7b4c2c0:
     dependencies:
