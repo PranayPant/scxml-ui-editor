@@ -47,6 +47,7 @@ export function ConnectionStatus({ compact }: { compact?: boolean }) {
           <span className="connection-error-msg">{connectionError}</span>
           <button
             type="button"
+            data-track="Retry Connection"
             className="connection-retry-btn"
             onClick={connect}
           >

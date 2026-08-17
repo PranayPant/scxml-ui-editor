@@ -78,6 +78,7 @@ export function InstanceView() {
       <div className="instance-actions">
         <button
           type="button"
+          data-track="Stop Execution"
           className="instance-btn instance-btn-stop"
           onClick={stopExecution}
           disabled={loading}
@@ -86,6 +87,7 @@ export function InstanceView() {
         </button>
         <button
           type="button"
+          data-track="Refresh Snapshot"
           className="instance-btn instance-btn-refresh"
           onClick={refreshSnapshot}
           disabled={loading}

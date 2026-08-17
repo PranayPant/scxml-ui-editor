@@ -21,6 +21,7 @@ export function EnginePanel() {
         <span>⚡ Engine</span>
         <button
           type="button"
+          data-track="Close Engine Panel"
           className="engine-panel-close"
           onClick={togglePanel}
         >
@@ -34,6 +35,7 @@ export function EnginePanel() {
         {!connected && (
           <button
             type="button"
+            data-track="Connect"
             className="connection-retry-btn"
             onClick={connect}
             style={{ marginTop: 6 }}

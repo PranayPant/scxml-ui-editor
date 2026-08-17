@@ -197,6 +197,25 @@ export default defineConfig({
           branches: 80,
           statements: 90,
         },
+        // Engine plugin store is pure logic (no DOM) — lock to 100%.
+        "src/plugins/engine/useEngineStore.ts": {
+          lines: 100,
+          functions: 100,
+          branches: 100,
+          statements: 100,
+        },
+        "src/plugins/engine/useExecutionOverlay.ts": {
+          lines: 100,
+          functions: 100,
+          branches: 100,
+          statements: 100,
+        },
+        "src/plugins/engine/useExecutionSync.ts": {
+          lines: 100,
+          functions: 100,
+          branches: 100,
+          statements: 100,
+        },
       },
       // Exclude framework noise, visual UI shells, and non-app config/output.
       exclude: [
@@ -210,7 +229,11 @@ export default defineConfig({
         "src/components/canvas/edges/TransitionEdge.tsx",
         "src/components/canvas/nodes/InitialIndicatorNode.tsx",
         "src/components/TelemetryErrorBoundary.tsx",
-        "src/plugins/**",
+        "src/plugins/engine/ConnectionStatus.tsx",
+        "src/plugins/engine/EnginePanel.tsx",
+        "src/plugins/engine/EventInput.tsx",
+        "src/plugins/engine/ExecutionHistory.tsx",
+        "src/plugins/engine/InstanceView.tsx",
         "src/tracing.ts",
         "**/*.d.ts",
         "**/index.ts",

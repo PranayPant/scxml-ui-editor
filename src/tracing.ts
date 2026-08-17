@@ -50,19 +50,31 @@ registerInstrumentations({
     }),
     new UserInteractionInstrumentation({
       eventNames: ["click"],
-      // Skip spans for passive/background clicks — only instrument
-      // interactive elements where user actions are meaningful for debugging.
-      shouldPreventSpanCreation: (eventType, element) => {
+      // Rename generic "click" spans to include a human-readable label so
+      // the dev-log output is actionable (e.g. "click: Export" instead of
+      // "[click]").
+      // Labels are derived from the `data-track` attribute when present,
+      // falling back to the element's trimmed text content or tag name.
+      shouldPreventSpanCreation: (eventType, element, span) => {
         if (eventType !== "click") return true;
         if (!element) return true;
-        // Only create spans for <button> and elements with data-track
+
+        // Only instrument <button> and elements with data-track
         if (
-          element.tagName === "BUTTON" ||
-          element.hasAttribute("data-track")
+          element.tagName !== "BUTTON" &&
+          !element.hasAttribute("data-track")
         ) {
-          return false;
+          return true;
         }
-        return true;
+
+        // Rename the span to something descriptive
+        const label =
+          element.getAttribute("data-track") ??
+          element.textContent?.trim() ??
+          element.tagName.toLowerCase();
+        span.updateName(`click: ${label}`);
+
+        return false;
       },
     }),
   ],

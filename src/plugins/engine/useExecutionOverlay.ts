@@ -8,7 +8,7 @@
 
 import { create } from "zustand";
 
-export type ExecutionMode = "idle" | "running" | "done";
+export type ExecutionMode = "idle" | "interactive" | "done";
 
 export interface ExecutionOverlayState {
   /** Current execution mode. */
@@ -27,12 +27,14 @@ export interface ExecutionOverlayState {
   loading: boolean;
 
   // Actions
-  enterRunning: (stateIds: string[]) => void;
+  enterInteractive: (stateIds: string[]) => void;
   stepComplete: (
     prevStateIds: string[],
     nextStateIds: string[],
     firedEdges: string[],
   ) => void;
+  /** Transition to "done" mode when the statechart finishes. */
+  finish: (stateIds: string[]) => void;
   stop: () => void;
   clearFlash: () => void;
   setLoading: (loading: boolean) => void;
@@ -45,9 +47,9 @@ export const useExecutionOverlay = create<ExecutionOverlayState>()((set) => ({
   firedTransitionIds: [],
   loading: false,
 
-  enterRunning: (stateIds) => {
+  enterInteractive: (stateIds) => {
     set({
-      mode: "running",
+      mode: "interactive",
       activeStateIds: stateIds,
       previousStateIds: [],
       firedTransitionIds: [],
@@ -67,6 +69,16 @@ export const useExecutionOverlay = create<ExecutionOverlayState>()((set) => ({
         useExecutionOverlay.getState().clearFlash();
       }, 800);
     }
+  },
+
+  finish: (stateIds) => {
+    set({
+      mode: "done",
+      activeStateIds: stateIds,
+      previousStateIds: [],
+      firedTransitionIds: [],
+      loading: false,
+    });
   },
 
   stop: () => {

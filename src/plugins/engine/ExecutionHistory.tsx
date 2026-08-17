@@ -24,6 +24,7 @@ export function ExecutionHistory() {
       <div
         className="engine-panel-section-title"
         style={{ cursor: "pointer", userSelect: "none" }}
+        data-track="Toggle History"
         onClick={toggleHistory}
       >
         {showHistory ? "▼" : "▶"} History ({executionHistory.length})
@@ -57,6 +58,7 @@ export function ExecutionHistory() {
           </ul>
           <button
             type="button"
+            data-track="Clear History"
             className="history-clear-btn"
             onClick={clearHistory}
           >

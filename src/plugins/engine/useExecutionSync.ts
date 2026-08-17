@@ -50,9 +50,15 @@ export function syncSnapshotToCanvas(
   const nextConfig = snapshot.configuration;
   const isInitial = !prevSnapshot;
 
+  // If the statechart has finished executing, transition to "done" mode.
+  if (snapshot.done) {
+    overlay.finish(nextConfig);
+    return;
+  }
+
   if (isInitial) {
     // First snapshot — enter running mode
-    overlay.enterRunning(nextConfig);
+    overlay.enterInteractive(nextConfig);
   } else {
     // Subsequent snapshot — compute fired transitions
     const firedEdges = computeFiredTransitions(prevConfig, nextConfig, edges);

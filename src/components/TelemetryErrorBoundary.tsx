@@ -85,7 +85,12 @@ export class TelemetryErrorBoundary extends Component<Props, State> {
               Reference ID: <code>{this.state.traceId}</code>
             </p>
           )}
-          <button onClick={() => window.location.reload()}>Reload Page</button>
+          <button
+            data-track="Reload Page"
+            onClick={() => window.location.reload()}
+          >
+            Reload Page
+          </button>
         </div>
       );
     }

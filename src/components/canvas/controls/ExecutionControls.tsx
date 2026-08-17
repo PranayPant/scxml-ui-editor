@@ -1,15 +1,16 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useEngineStore } from "@/plugins/engine/useEngineStore";
 import { useExecutionOverlay } from "@/plugins/engine/useExecutionOverlay";
 import { syncSnapshotToCanvas } from "@/plugins/engine/useExecutionSync";
+import type { InstanceSnapshot } from "scxml-http-browser-client";
 
 /**
  * Floating execution controls overlaid on the canvas.
  *
- * ▶ Play  — starts execution (creates engine instance from current AST)
+ * ▶ Step  — starts execution (creates engine instance from current AST)
  * ■ Stop  — stops execution (tears down engine instance)
- * Status badge shows "Running" or "Done" when active.
+ * Status badge shows "Interactive" or "Done" when active.
  */
 export function ExecutionControls() {
   const ast = useEditorStore((s) => s.ast);
@@ -19,40 +20,39 @@ export function ExecutionControls() {
     useEngineStore();
 
   const { mode, loading: overlayLoading } = useExecutionOverlay();
-  const isExecuting = mode === "running" || mode === "done";
+  const isExecuting = mode === "interactive" || mode === "done";
   const isBusy = isLoading || overlayLoading;
 
-  const handlePlay = useCallback(async () => {
+  // Keep a ref to the previous snapshot so we can diff on each update.
+  // We use subscribeWithSelector (selector form) to reliably get the
+  // previous value from Zustand — vanilla subscribe(listener) only passes
+  // the new state, not (state, prevState).
+  const prevSnapshotRef = useRef<InstanceSnapshot | null>(null);
+
+  const handleStep = useCallback(async () => {
     if (!ast || !rawXml) return;
 
     // Serialize the current AST as JSON for the engine
     const astJson = JSON.stringify(ast);
 
-    // Subscribe to the engine store for snapshot changes
-    const unsubscribe = useEngineStore.subscribe((state) => {
-      const snapshot = state.instanceSnapshot;
-      if (!snapshot) return;
+    // Subscribe to snapshot changes via subscribeWithSelector's selector
+    // form: subscribe(selector, callback). The callback receives
+    // (selectedValue, previousSelectedValue) so we get reliable diffs.
+    const unsubSnap = useEngineStore.subscribe(
+      (state) => state.instanceSnapshot,
+      (snapshot, prevSnapshot) => {
+        if (!snapshot) return;
 
-      // Get current edges from the editor store
-      const edges = useEditorStore.getState().edges;
-      // prev snapshot will be captured by the second subscription
-      syncSnapshotToCanvas(snapshot, null, edges);
-    });
+        // On first call, prevSnapshot is the initial state's null.
+        // Use the ref as fallback for the "previous snapshot" value.
+        const prev = prevSnapshot ?? prevSnapshotRef.current;
+        const edges = useEditorStore.getState().edges;
+        syncSnapshotToCanvas(snapshot, prev, edges);
+        prevSnapshotRef.current = snapshot;
+      },
+    );
 
     await startExecution(astJson);
-
-    // Subscribe to subsequent snapshot changes
-    const unsubSnap = useEngineStore.subscribe((state, prevState) => {
-      const snapshot = state.instanceSnapshot;
-      const prevSnapshot = prevState.instanceSnapshot;
-      if (!snapshot) return;
-
-      const edges = useEditorStore.getState().edges;
-      syncSnapshotToCanvas(snapshot, prevSnapshot, edges);
-    });
-
-    // Clean up initial subscription
-    unsubscribe();
 
     // Store unsubscriber for cleanup on stop
     (window as any).__engineUnsub = unsubSnap;
@@ -62,6 +62,7 @@ export function ExecutionControls() {
     // Unsubscribe from engine store
     (window as any).__engineUnsub?.();
     (window as any).__engineUnsub = undefined;
+    prevSnapshotRef.current = null;
 
     await stopExecution();
     useExecutionOverlay.getState().stop();
@@ -73,9 +74,9 @@ export function ExecutionControls() {
   if (!connected) {
     statusText = connecting ? "Connecting…" : "Disconnected";
   } else if (isExecuting && isBusy) {
-    statusText = mode === "running" ? "Running…" : "Done";
+    statusText = mode === "interactive" ? "Interactive…" : "Done";
   } else if (isExecuting) {
-    statusText = mode === "running" ? "Running" : "Done";
+    statusText = mode === "interactive" ? "Interactive" : "Done";
   } else {
     statusText = null;
   }
@@ -85,6 +86,7 @@ export function ExecutionControls() {
       {isExecuting ? (
         <button
           type="button"
+          data-track="Stop"
           className="execution-btn execution-btn-stop"
           onClick={handleStop}
           disabled={isBusy}
@@ -95,12 +97,15 @@ export function ExecutionControls() {
       ) : (
         <button
           type="button"
+          data-track="Step"
           className="execution-btn execution-btn-play"
-          onClick={handlePlay}
+          onClick={handleStep}
           disabled={!connected || !ast}
-          title={connected ? "Start execution" : "Engine not connected"}
+          title={
+            connected ? "Step through transitions" : "Engine not connected"
+          }
         >
-          ▶
+          Step
         </button>
       )}
 

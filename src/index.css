@@ -493,6 +493,23 @@ body {
   padding: 0 2px;
 }
 
+/* Clickable edge label during interactive mode */
+.transition-edge-label-clickable .transition-edge-label-badge {
+  cursor: pointer;
+}
+
+.transition-edge-label-clickable .transition-edge-event {
+  color: #34d399;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+}
+
+.transition-edge-label-clickable {
+  border-color: #34d399;
+  box-shadow:
+    0 0 8px rgba(52, 211, 153, 0.3),
+    0 1px 4px rgb(0 0 0 / 0.35);
+}
+
 /* Inline editor used while renaming an edge's event label. */
 .edge-label-input {
   width: 140px;

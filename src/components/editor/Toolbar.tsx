@@ -32,10 +32,10 @@ export function Toolbar({
   return (
     <div className="toolbar">
       <div className="toolbar-group">
-        <button type="button" onClick={onExport}>
+        <button type="button" data-track="Export" onClick={onExport}>
           Export
         </button>
-        <button type="button" onClick={onAutoLayout}>
+        <button type="button" data-track="Auto Layout" onClick={onAutoLayout}>
           Auto Layout
         </button>
       </div>
@@ -45,6 +45,7 @@ export function Toolbar({
       <div className="toolbar-group">
         <button
           type="button"
+          data-track="Toggle Engine"
           onClick={onToggleEngine}
           title="Toggle engine panel"
         >
@@ -53,13 +54,28 @@ export function Toolbar({
       </div>
 
       <div className="toolbar-group">
-        <button type="button" onClick={onMaximizeCode} title="Code only">
+        <button
+          type="button"
+          data-track="Code View"
+          onClick={onMaximizeCode}
+          title="Code only"
+        >
           Code
         </button>
-        <button type="button" onClick={onResetSplit} title="Split view">
+        <button
+          type="button"
+          data-track="Split View"
+          onClick={onResetSplit}
+          title="Split view"
+        >
           Split
         </button>
-        <button type="button" onClick={onMaximizeCanvas} title="Canvas only">
+        <button
+          type="button"
+          data-track="Canvas View"
+          onClick={onMaximizeCanvas}
+          title="Canvas only"
+        >
           Canvas
         </button>
       </div>

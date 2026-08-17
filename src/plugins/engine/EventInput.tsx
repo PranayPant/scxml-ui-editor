@@ -70,6 +70,7 @@ export function EventInput() {
           />
           <button
             type="button"
+            data-track="Send Event"
             className="event-send-btn"
             onClick={handleSubmit}
             disabled={isLoading || !eventName.trim()}
