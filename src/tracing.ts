@@ -22,8 +22,18 @@ import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
 import { UserInteractionInstrumentation } from "@opentelemetry/instrumentation-user-interaction";
 import { logger } from "@/plugins/tracing/logger";
+import { parserTracer } from "scxml-parser";
+import { clientTracer } from "scxml-http-browser-client";
 
 const traceEndpoint = import.meta.env.VITE_OTLP_TRACE_ENDPOINT;
+
+// Mirror the INFO/DEBUG log-level split into the fine-grained spans of the
+// bundled parser and browser-client libraries (they are API-only deps, so
+// these become no-ops when this provider is absent).
+const detailEnabled =
+  String(import.meta.env.VITE_LOG_LEVEL ?? "INFO").toUpperCase() === "DEBUG";
+parserTracer.setDetail(detailEnabled);
+clientTracer.setDetail(detailEnabled);
 
 const otlpExporter = new OTLPTraceExporter({
   url: traceEndpoint,
@@ -47,6 +57,13 @@ registerInstrumentations({
       // HTTP boundary. The engine's CORS config (cors_plug) allows the
       // traceparent header through.
       propagateTraceHeaderCorsUrls: [new RegExp("http://localhost:4000")],
+      // Don't auto-instrument the OTLP exporter's own POSTs (to the collector
+      // or the Vite fallback endpoint) — the exporter creates its own spans
+      // and instrumenting them would just add self-referential noise.
+      ignoreUrls: [
+        new RegExp(":4318"),
+        new RegExp("/api/logs"),
+      ],
     }),
     new UserInteractionInstrumentation({
       eventNames: ["click"],

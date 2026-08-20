@@ -39,3 +39,14 @@ logger.use((ctx) => {
 export function getSubLogger(name: string): Logger<unknown> {
   return logger.getSubLogger({ name });
 }
+
+/**
+ * Whether fine-grained (DEBUG-style) tracing should be enabled, derived from
+ * the same `VITE_LOG_LEVEL` env var that controls the logger (default INFO).
+ * Hosts use this to toggle `spanDetail` on the browser client and parser so a
+ * log level of DEBUG also expands the trace tree with their fine-grained spans.
+ */
+export function traceDetailEnabled(): boolean {
+  const level = (import.meta as any).env?.VITE_LOG_LEVEL ?? "INFO";
+  return String(level).toUpperCase() === "DEBUG";
+}

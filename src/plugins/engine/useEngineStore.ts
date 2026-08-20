@@ -9,7 +9,8 @@ import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 import { EngineClient } from "scxml-http-browser-client";
 import type { InstanceSnapshot } from "scxml-http-browser-client";
-import { logger } from "@/plugins/tracing/logger";
+import { parserTracer } from "scxml-parser";
+import { logger, traceDetailEnabled } from "@/plugins/tracing/logger";
 import { tracer, withSpan } from "@/plugins/tracing/withSpan";
 
 // ---------------------------------------------------------------------------
@@ -99,7 +100,10 @@ export const useEngineStore = create<EngineState>()(
       (set, get) => ({
         // Configuration
         config: defaultConfig,
-        client: new EngineClient(defaultConfig.engineUrl),
+        client: new EngineClient(defaultConfig.engineUrl, {
+          baseUrl: defaultConfig.engineUrl,
+          spanDetail: traceDetailEnabled(),
+        }),
 
         // Connection state
         connected: false,
@@ -124,7 +128,10 @@ export const useEngineStore = create<EngineState>()(
 
         setConfig: (partial) => {
           const newConfig = { ...get().config, ...partial };
-          const newClient = new EngineClient(newConfig.engineUrl);
+          const newClient = new EngineClient(newConfig.engineUrl, {
+            baseUrl: newConfig.engineUrl,
+            spanDetail: traceDetailEnabled(),
+          });
           set({ config: newConfig, client: newClient });
 
           // Auto-connect if enabled and was previously connected
@@ -288,7 +295,10 @@ export const useEngineStore = create<EngineState>()(
           const state = get();
           if (state.config.engineUrl !== defaultConfig.engineUrl) {
             // Update client if URL changed from storage
-            state.client = new EngineClient(state.config.engineUrl);
+            state.client = new EngineClient(state.config.engineUrl, {
+              baseUrl: state.config.engineUrl,
+              spanDetail: traceDetailEnabled(),
+            });
           }
         },
       }),
