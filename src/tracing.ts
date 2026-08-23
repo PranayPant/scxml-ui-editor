@@ -27,6 +27,16 @@ import { clientTracer } from "scxml-http-browser-client";
 
 const traceEndpoint = import.meta.env.VITE_OTLP_TRACE_ENDPOINT;
 
+// Per-element timestamps of the last accepted `click:` span, used to collapse
+// the instrumentation's nested duplicate click spans (see below). A WeakMap
+// keeps no strong references to DOM elements, so it can't leak.
+const lastClickSpanAt = new WeakMap<Element, number>();
+// A real user cannot trigger two clicks on the same element within this
+// window, but the instrumentation's nested capture/bubble spans all fire
+// within microseconds, so this cleanly separates "one real click" from
+// "the duplicate chain created for that one click".
+const CLICK_DEDUP_WINDOW_MS = 250;
+
 // Mirror the INFO/DEBUG log-level split into the fine-grained spans of the
 // bundled parser and browser-client libraries (they are API-only deps, so
 // these become no-ops when this provider is absent).
@@ -56,22 +66,19 @@ registerInstrumentations({
       // Propagate traceparent to the engine so spans are linked across the
       // HTTP boundary. The engine's CORS config (cors_plug) allows the
       // traceparent header through.
-      propagateTraceHeaderCorsUrls: [new RegExp("http://localhost:4000")],
+      propagateTraceHeaderCorsUrls: [/http:\/\/localhost:4000/],
       // Don't auto-instrument the OTLP exporter's own POSTs (to the collector
       // or the Vite fallback endpoint) — the exporter creates its own spans
       // and instrumenting them would just add self-referential noise.
-      ignoreUrls: [
-        new RegExp(":4318"),
-        new RegExp("/api/logs"),
-      ],
+      ignoreUrls: [/:4318/, /\/api\/logs/],
     }),
     new UserInteractionInstrumentation({
       eventNames: ["click"],
-      // Rename generic "click" spans to include a human-readable label so
-      // the dev-log output is actionable (e.g. "click: Export" instead of
-      // "[click]").
-      // Labels are derived from the `data-track` attribute when present,
-      // falling back to the element's trimmed text content or tag name.
+      // Dedup via shouldPreventSpanCreation: the instrumentation emits a
+      // nested `click:` span per event listener, so one click becomes a
+      // 4-deep chain of identical spans. (No `preventDuplicates` option
+      // exists in this package — don't add one.) The window collapses the
+      // chain to one span per real click while allowing genuine re-clicks.
       shouldPreventSpanCreation: (eventType, element, span) => {
         if (eventType !== "click") return true;
         if (!element) return true;
@@ -83,6 +90,13 @@ registerInstrumentations({
         ) {
           return true;
         }
+
+        // Dedup: reject any click span on the same element that fires within
+        // the dedup window of the previous one (the nested chain).
+        const now = Date.now();
+        const prev = lastClickSpanAt.get(element) ?? 0;
+        if (now - prev < CLICK_DEDUP_WINDOW_MS) return true;
+        lastClickSpanAt.set(element, now);
 
         // Rename the span to something descriptive
         const label =

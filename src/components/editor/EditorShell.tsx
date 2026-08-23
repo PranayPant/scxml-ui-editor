@@ -1,19 +1,19 @@
-import { useMonaco } from "@monaco-editor/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useMonaco } from '@monaco-editor/react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   type ImperativePanelHandle,
   Panel,
   PanelGroup,
   PanelResizeHandle,
-} from "react-resizable-panels";
-import { collectStateNodes, writeLayout } from "@/bridge/metadataRegistry";
-import { DEFAULT_SCXML } from "@/bridge/sampleDocument";
-import { ReactFlowCanvas } from "@/components/canvas/ReactFlowCanvas";
-import { EnginePanel, useEngineStore } from "@/plugins/engine";
-import { layoutScxmlGraph } from "@/layout/elkLayout";
-import { useEditorStore } from "@/store/useEditorStore";
-import { MonacoEditor } from "./MonacoEditor";
-import { Toolbar } from "./Toolbar";
+} from 'react-resizable-panels';
+import { collectStateNodes, writeLayout } from '@/bridge/metadataRegistry';
+import { DEFAULT_SCXML } from '@/bridge/sampleDocument';
+import { ReactFlowCanvas } from '@/components/canvas/ReactFlowCanvas';
+import { EnginePanel, useEngineStore } from '@/plugins/engine';
+import { layoutScxmlGraph } from '@/layout/elkLayout';
+import { useEditorStore } from '@/store/useEditorStore';
+import { MonacoEditor } from './MonacoEditor';
+import { Toolbar } from './Toolbar';
 
 /**
  * Root layout for the editor: a resizable split between the Monaco code
@@ -23,6 +23,12 @@ export function EditorShell() {
   const codePanelRef = useRef<ImperativePanelHandle>(null);
   const canvasPanelRef = useRef<ImperativePanelHandle>(null);
 
+  // Guard so seedStore runs exactly once even when React StrictMode
+  // double-invokes effects in dev. A ref (not useState) is used because its
+  // mutation is synchronous and does not schedule a re-render, so it safely
+  // catches the second StrictMode invocation before any async state resolves.
+  const isSeededRef = useRef(false);
+
   // Ensure the store is seeded with the sample document on first mount.
   const ast = useEditorStore((s) => s.ast);
   const seedStore = useEditorStore((s) => s.seedStore);
@@ -31,16 +37,18 @@ export function EditorShell() {
   useMonaco();
 
   useEffect(() => {
+    if (isSeededRef.current) return; // already seeded (or seeding) — bail out
+    isSeededRef.current = true; // mark synchronously before any async work
     if (!ast) seedStore(DEFAULT_SCXML);
   }, [ast, seedStore]);
 
   const handleExport = useCallback(() => {
     const rawXml = useEditorStore.getState().rawXml;
-    const blob = new Blob([rawXml], { type: "application/xml" });
+    const blob = new Blob([rawXml], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "statechart.scxml";
+    a.download = 'statechart.scxml';
     a.click();
     URL.revokeObjectURL(url);
   }, []);
@@ -89,18 +97,8 @@ export function EditorShell() {
         enginePanelOpen={enginePanelOpen}
       />
 
-      <PanelGroup
-        direction="horizontal"
-        autoSaveId="scxml-editor-split"
-        className="flex-1"
-      >
-        <Panel
-          ref={codePanelRef}
-          defaultSize={40}
-          minSize={15}
-          collapsible
-          className="relative"
-        >
+      <PanelGroup direction="horizontal" autoSaveId="scxml-editor-split" className="flex-1">
+        <Panel ref={codePanelRef} defaultSize={40} minSize={15} collapsible className="relative">
           <MonacoEditor />
         </Panel>
 
@@ -108,13 +106,7 @@ export function EditorShell() {
           <div className="h-8 w-1 rounded-full bg-neutral-400" />
         </PanelResizeHandle>
 
-        <Panel
-          ref={canvasPanelRef}
-          defaultSize={60}
-          minSize={20}
-          collapsible
-          className="relative"
-        >
+        <Panel ref={canvasPanelRef} defaultSize={60} minSize={20} collapsible className="relative">
           <ReactFlowCanvas />
           {enginePanelOpen && <EnginePanel />}
         </Panel>
