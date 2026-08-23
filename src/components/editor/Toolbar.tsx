@@ -9,6 +9,10 @@ interface ToolbarProps {
   onResetSplit: () => void;
   /** Export the current SCXML document as a file download. */
   onExport: () => void;
+  /** Toggle the engine panel visibility. */
+  onToggleEngine: () => void;
+  /** Whether the engine panel is currently open. */
+  enginePanelOpen: boolean;
 }
 
 /**
@@ -22,14 +26,16 @@ export function Toolbar({
   onMaximizeCanvas,
   onResetSplit,
   onExport,
+  onToggleEngine,
+  enginePanelOpen,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
       <div className="toolbar-group">
-        <button type="button" onClick={onExport}>
+        <button type="button" data-track="Export" onClick={onExport}>
           Export
         </button>
-        <button type="button" onClick={onAutoLayout}>
+        <button type="button" data-track="Auto Layout" onClick={onAutoLayout}>
           Auto Layout
         </button>
       </div>
@@ -37,13 +43,39 @@ export function Toolbar({
       <div className="toolbar-group toolbar-spacer" />
 
       <div className="toolbar-group">
-        <button type="button" onClick={onMaximizeCode} title="Code only">
+        <button
+          type="button"
+          data-track="Toggle Engine"
+          onClick={onToggleEngine}
+          title="Toggle engine panel"
+        >
+          {enginePanelOpen ? "⚡ Engine" : "⚡ Engine"}
+        </button>
+      </div>
+
+      <div className="toolbar-group">
+        <button
+          type="button"
+          data-track="Code View"
+          onClick={onMaximizeCode}
+          title="Code only"
+        >
           Code
         </button>
-        <button type="button" onClick={onResetSplit} title="Split view">
+        <button
+          type="button"
+          data-track="Split View"
+          onClick={onResetSplit}
+          title="Split view"
+        >
           Split
         </button>
-        <button type="button" onClick={onMaximizeCanvas} title="Canvas only">
+        <button
+          type="button"
+          data-track="Canvas View"
+          onClick={onMaximizeCanvas}
+          title="Canvas only"
+        >
           Canvas
         </button>
       </div>

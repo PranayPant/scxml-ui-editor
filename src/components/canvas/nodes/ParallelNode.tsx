@@ -1,16 +1,22 @@
-import type { NodeProps } from '@xyflow/react';
-import { memo } from 'react';
-import type { ScxmlFlowNode } from '@/bridge/scxmlToFlow';
-import { EditableNodeTitle } from './EditableNodeTitle';
-import { StateNodeWrapper } from './StateNodeWrapper';
+import type { NodeProps } from "@xyflow/react";
+import { memo } from "react";
+import type { ScxmlFlowNode } from "@/bridge/scxmlToFlow";
+import { EditableNodeTitle } from "./EditableNodeTitle";
+import { StateNodeWrapper } from "./StateNodeWrapper";
 
 /**
  * Parallel state — renders with a distinct "=" style to signal concurrent
  * regions, while still hosting nested sub-states as React Flow children.
  */
-export const ParallelNode = memo(function ParallelNode({ id, data }: NodeProps<ScxmlFlowNode>) {
+export const ParallelNode = memo(function ParallelNode({
+  id,
+  data,
+}: NodeProps<ScxmlFlowNode>) {
   return (
-    <StateNodeWrapper className="state-node state-node-parallel state-node-container state-node-hover">
+    <StateNodeWrapper
+      nodeId={id}
+      className="state-node state-node-parallel state-node-container state-node-hover"
+    >
       <div className="state-node-title-row">
         <EditableNodeTitle
           nodeId={id}

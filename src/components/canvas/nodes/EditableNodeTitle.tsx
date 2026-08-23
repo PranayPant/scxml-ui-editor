@@ -1,6 +1,6 @@
-import { memo, useCallback } from 'react';
-import { useEditorStore } from '@/store/useEditorStore';
-import { EditableLabel } from '../EditableLabel';
+import { memo, useCallback } from "react";
+import { useEditorStore } from "@/store/useEditorStore";
+import { EditableLabel } from "../EditableLabel";
 
 interface EditableNodeTitleProps {
   nodeId: string;
@@ -24,24 +24,30 @@ export const EditableNodeTitle = memo(function EditableNodeTitle({
   const commitLabel = useEditorStore((s) => s.commitLabel);
   const setEditingLabel = useEditorStore((s) => s.setEditingLabel);
 
-  const isEditing = editingKind === 'node' && editingId === nodeId;
+  const isEditing = editingKind === "node" && editingId === nodeId;
 
-  const openEditor = useCallback(() => setEditingLabel(nodeId, 'node'), [nodeId, setEditingLabel]);
+  const openEditor = useCallback(
+    () => setEditingLabel(nodeId, "node"),
+    [nodeId, setEditingLabel],
+  );
 
   return (
-    <span className={`state-node-title nodrag ${isEditing ? 'state-node-title-editing' : ''}`}>
+    <span
+      className={`state-node-title nodrag ${isEditing ? "state-node-title-editing" : ""}`}
+    >
       {prefix}
       {isEditing ? (
         <EditableLabel
           value={label}
           placeholder="state id"
           inputClassName="node-title-input"
-          onCommit={(v) => commitLabel(nodeId, 'node', v)}
+          onCommit={(v) => commitLabel(nodeId, "node", v)}
           onCancel={() => setEditingLabel(null, null)}
         />
       ) : (
         <button
           type="button"
+          data-track="Rename State"
           className="state-node-title-text"
           title="Rename state (double-click or Enter)"
           onDoubleClick={(e) => {

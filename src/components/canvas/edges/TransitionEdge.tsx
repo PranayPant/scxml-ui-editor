@@ -1,8 +1,15 @@
-import type { Edge } from '@xyflow/react';
-import { BaseEdge, EdgeLabelRenderer, type EdgeProps, getSmoothStepPath } from '@xyflow/react';
-import { memo } from 'react';
-import { useEditorStore } from '@/store/useEditorStore';
-import { EditableLabel } from '../EditableLabel';
+import type { Edge } from "@xyflow/react";
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  type EdgeProps,
+  getSmoothStepPath,
+} from "@xyflow/react";
+import { memo } from "react";
+import { useEditorStore } from "@/store/useEditorStore";
+import { useExecutionOverlay } from "@/plugins/engine/useExecutionOverlay";
+import { useEngineStore } from "@/plugins/engine/useEngineStore";
+import { EditableLabel } from "../EditableLabel";
 
 export interface TransitionEdgeData extends Record<string, unknown> {
   event?: string;
@@ -40,6 +47,8 @@ export const TransitionEdgeComponent = memo(function TransitionEdgeComponent(
     style,
   } = props;
 
+  const { mode, activeStateIds } = useExecutionOverlay();
+
   const editingId = useEditorStore((s) => s.editingLabelId);
   const editingKind = useEditorStore((s) => s.editingLabelKind);
   const commitLabel = useEditorStore((s) => s.commitLabel);
@@ -56,50 +65,91 @@ export const TransitionEdgeComponent = memo(function TransitionEdgeComponent(
   });
 
   const hasLabel = Boolean(data?.event || data?.cond);
-  const isEditing = editingKind === 'edge' && editingId === id;
-  const eventText = data?.event ?? '';
+  const isEditing = editingKind === "edge" && editingId === id;
+  const eventText = data?.event ?? "";
 
   // Shift reciprocal-edge labels perpendicular to the path so back-and-forth
   // transitions (e.g. `idle` <-> `running`) don't render on top of each other.
   const offsetY = data?.isReciprocal ? -14 : 0;
 
+  const isClickableInExecution =
+    mode === "interactive" &&
+    Boolean(data?.event) &&
+    activeStateIds.includes(props.source);
+
   const openEditor = (e?: { stopPropagation?: () => void }) => {
     e?.stopPropagation?.();
-    setEditingLabel(id, 'edge');
+    setEditingLabel(id, "edge");
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (mode === "interactive" && data?.event) {
+      const engineStore = useEngineStore.getState();
+      if (engineStore.activeInstanceId) {
+        engineStore.sendEvent(data.event, {});
+      }
+      return;
+    }
+    openEditor(e);
   };
 
   return (
     <>
-      <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} />
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        style={{
+          ...style,
+          cursor: isClickableInExecution ? "pointer" : undefined,
+        }}
+        onClick={isClickableInExecution ? handleClick : undefined}
+      />
       <EdgeLabelRenderer>
         <div
-          className={`transition-edge-label nodrag nopan ${hasLabel ? '' : 'transition-edge-label-empty'}`}
+          className={`transition-edge-label nodrag nopan ${hasLabel ? "" : "transition-edge-label-empty"} ${isClickableInExecution ? "transition-edge-label-clickable" : ""}`}
           style={{
-            position: 'absolute',
+            position: "absolute",
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY + offsetY}px)`,
-            pointerEvents: 'all',
+            pointerEvents: "all",
           }}
           data-edge-label-id={id}
-          data-reciprocal={data?.isReciprocal ? 'true' : 'false'}
+          data-reciprocal={data?.isReciprocal ? "true" : "false"}
         >
           {isEditing ? (
             <EditableLabel
               value={eventText}
               placeholder="event name"
               inputClassName="edge-label-input"
-              onCommit={(v) => commitLabel(id, 'edge', v)}
+              onCommit={(v) => commitLabel(id, "edge", v)}
               onCancel={() => setEditingLabel(null, null)}
             />
           ) : (
             <button
               type="button"
+              data-track={
+                mode === "interactive" && data?.event
+                  ? "Send Event"
+                  : "Edit Edge Label"
+              }
               className="transition-edge-label-badge"
-              title={hasLabel ? 'Edit label (click or double-click)' : 'Add a label (click)'}
-              onDoubleClick={openEditor}
-              onClick={openEditor}
+              title={
+                isClickableInExecution
+                  ? `Send event: ${data?.event}`
+                  : hasLabel
+                    ? "Edit label (click or double-click)"
+                    : "Add a label (click)"
+              }
+              onDoubleClick={mode === "interactive" ? undefined : openEditor}
+              onClick={handleClick}
+              style={{ cursor: isClickableInExecution ? "pointer" : undefined }}
             >
-              {eventText && <span className="transition-edge-event">{eventText}</span>}
-              {data?.cond && <span className="transition-edge-cond">[{data.cond}]</span>}
+              {eventText && (
+                <span className="transition-edge-event">{eventText}</span>
+              )}
+              {data?.cond && (
+                <span className="transition-edge-cond">[{data.cond}]</span>
+              )}
               {!hasLabel && <span className="transition-edge-add">+</span>}
             </button>
           )}

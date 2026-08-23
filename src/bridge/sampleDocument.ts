@@ -16,7 +16,7 @@ export const DEFAULT_SCXML = `<?xml version="1.0" encoding="UTF-8"?>
     </transition>
   </state>
 
-  <state id="running">
+  <state id="running" initial="processing">
     <metadata>
       <ui:layout x="120" y="400" width="160" height="80" />
     </metadata>
