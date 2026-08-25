@@ -26,7 +26,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^2.1.7",
-    "scxml-parser": "github:PranayPant/scxml-parser#main",
+    "scxml-parser": "link:../scxml-parser",
     "zustand": "^4.5.5"
   },
   "devDependencies": {
