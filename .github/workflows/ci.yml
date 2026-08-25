@@ -1,0 +1,72 @@
+name: CI
+
+# Runs formatting, linting, type-checking, tests, and coverage for the editor.
+#
+# This is the editor's own per-repo CI. Because the editor consumes
+# `scxml-parser` via a **local path** (`scxml-parser: link:../scxml-parser` in
+# package.json) rather than a GitHub ref, this job checks out the editor and
+# its sibling `scxml-parser` from `scxml-workspace` into the same tree, builds
+# the parser, and links it so the editor tests against the *same parser the
+# rest of the trade tests* (no path-vs-Git split-brain).
+#
+# Gates mirror the editor's lefthook (Biome format/lint + tsc) plus the
+# Vitest suite and its coverage thresholds (defined in vite.config.ts).
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout workspace (editor + parser siblings)
+        uses: actions/checkout@v4
+        with:
+          # The editor sits in a monorepo alongside scxml-parser; pull the
+          # whole tree so the `link:../scxml-parser` dependency resolves.
+          path: scxml-workspace
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Install parser deps + build (for local-path link)
+        working-directory: scxml-workspace/scxml-parser
+        run: |
+          pnpm install --frozen-lockfile=false
+          pnpm run build
+
+      - name: Install editor deps
+        working-directory: scxml-workspace/scxml-ui-editor
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Format check
+        working-directory: scxml-workspace/scxml-ui-editor
+        run: pnpm run format:check
+
+      - name: Lint check
+        working-directory: scxml-workspace/scxml-ui-editor
+        run: pnpm run lint:check
+
+      - name: Type check
+        working-directory: scxml-workspace/scxml-ui-editor
+        run: pnpm run typecheck
+
+      - name: Test
+        working-directory: scxml-workspace/scxml-ui-editor
+        run: pnpm test
+
+      - name: Coverage (thresholds from vite.config.ts)
+        working-directory: scxml-workspace/scxml-ui-editor
+        run: pnpm run test:coverage

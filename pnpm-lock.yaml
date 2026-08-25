@@ -27,8 +27,8 @@ dependencies:
     specifier: ^2.1.7
     version: 2.1.9(react-dom@18.3.1)(react@18.3.1)
   scxml-parser:
-    specifier: github:PranayPant/scxml-parser#main
-    version: github.com/PranayPant/scxml-parser/841d7808f634028d0ff956ea5b3855c37f2d7fba
+    specifier: link:../scxml-parser
+    version: link:../scxml-parser
   zustand:
     specifier: ^4.5.5
     version: 4.5.7(@types/react@18.3.31)(react@18.3.1)
@@ -3165,13 +3165,4 @@ packages:
       '@types/react': 18.3.31
       react: 18.3.1
       use-sync-external-store: 1.6.0(react@18.3.1)
-    dev: false
-
-  github.com/PranayPant/scxml-parser/841d7808f634028d0ff956ea5b3855c37f2d7fba:
-    resolution: {tarball: https://codeload.github.com/PranayPant/scxml-parser/tar.gz/841d7808f634028d0ff956ea5b3855c37f2d7fba}
-    name: scxml-parser
-    version: 0.0.1
-    requiresBuild: true
-    dependencies:
-      fast-xml-parser: 4.5.7
     dev: false
